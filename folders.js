@@ -72,7 +72,7 @@ MaestroFolders.prototype = {
 				reader.onloadend = function () {
 					callback(reader.result, file.size);
 				}
-				if(end>file.size) {
+				if(end>=file.size) {
 					end = file.size;
 				}
 				reader.readAsArrayBuffer(file.slice(start,end));

@@ -30,12 +30,12 @@ function getQueryStringParameters(url) {
 }
 var maestroFolders = new MaestroFolders();
 
-var chunkSize = 20000000;
+var chunkSize = 2000000;
 
 function stream(path,start,end,req, keepGoing) {
 
 	maestroFolders.getFileContents(path, start, end, function(contents, totalSize) {
-		if(end>totalSize) {
+		if(end>=totalSize) {
 			end = totalSize-1;
 		}
 		var headers = {
@@ -47,7 +47,7 @@ function stream(path,start,end,req, keepGoing) {
 		var status = 206;
 		if(!keepGoing) {
 			status = 206;
-			headers['Content-Length']= end-start+1;
+			headers['Content-Length']= end-start;
 			headers['Content-Range'] = 'bytes '+start+"-"+end+"/"+totalSize;
 		} else {
 			headers['Content-Length']= totalSize;
