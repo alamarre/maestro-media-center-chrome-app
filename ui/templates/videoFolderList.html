@@ -1,0 +1,6 @@
+<div id="container">
+    <ul class="list">
+        <li ng-repeat="subfolder in folders"><a ng-href="/videos/folders.html?path={{folder}}/{{subfolder}}">{{subfolder}}</a></li>
+        <li ng-repeat="file in files"><a ng-href="/player.html?index={{$index}}&folder={{folder}}">{{file}}</a></li>
+    </ul>
+</div>

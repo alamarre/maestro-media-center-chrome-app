@@ -1,0 +1,34 @@
+{
+    "name": "Maestro Media Center",
+    "description": "An HTML5 video based media center that focuses on serial watching (automatically plays next episode / next season) and multiple device support, including Chromecast.",
+    "version": "0.1",
+    "manifest_version": 2,
+    "permissions": [
+        {
+            "socket": [
+                "tcp-connect",
+                "tcp-listen"
+            ]
+           
+        },
+		{
+			 "system": [
+                "network"
+            ]
+		},
+		{
+			"fileSystem": [
+				"directory",
+				"retainEntries"
+			]
+		},
+		"storage"
+    ],
+    "app": {
+        "background": {
+            "scripts": [
+                "background.js"
+            ]
+        }
+    }
+}
