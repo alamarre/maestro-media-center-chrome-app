@@ -3,7 +3,7 @@ function $(id) {
 }
 
 function log(text) {
-  $('log').value += text + '\n';
+  console.log(text);
 }
 
 var port = 8717;
@@ -37,26 +37,41 @@ if (http.Server && http.WebSocketServer) {
   });
 
   // A list of connected websockets.
-  var connectedSockets = [];
+  //var connectedSockets = [];
+  var sessions = {};
+  var hostnames = {};
 
   wsServer.addEventListener('request', function(req) {
     log('Client connected');
     var socket = req.accept();
-    connectedSockets.push(socket);
-
-    // When a message is received on one socket, rebroadcast it on all
-    // connected sockets.
+    
+    // Route the message to the right client
     socket.addEventListener('message', function(e) {
-      for (var i = 0; i < connectedSockets.length; i++)
-        connectedSockets[i].send(e.data);
+		
+        var data = JSON.parse(e.data);
+        var id = data.id;
+        var hostname = data.host;
+        var session = sessions[id] || socket;
+        switch(data.action) {
+        	case "list":
+        		session.send(JSON.stringify(hostnames));
+        		break;
+        	case "setId":
+        		sessions[id] = socket;
+        		hostnames[hostname] = id;
+        		break;
+        	default:
+        		session.send(e.data);
+        		break;
+        }
     });
 
     // When a socket is closed, remove it from the list of connected sockets.
     socket.addEventListener('close', function() {
       log('Client disconnected');
-      for (var i = 0; i < connectedSockets.length; i++) {
-        if (connectedSockets[i] == socket) {
-          connectedSockets.splice(i, 1);
+      for (var key in sessions) {
+        if (sessions[key] == socket) {
+          sessions.splice(i, 1);
           break;
         }
       }
@@ -67,16 +82,59 @@ if (http.Server && http.WebSocketServer) {
 
 var maestroFolders = new MaestroFolders();
 
+
+function addFolder(folderName, list) {
+	
+	var entry = document.createElement("div");
+	var name = document.createElement("div");
+	
+	name.innerText = folderName;
+	entry.appendChild(name);
+	var deleteButton = document.createElement("button");
+	deleteButton.innerText ="Delete";
+	deleteButton.setAttribute("data-folder-name",folderName);
+	deleteButton.addEventListener('click', function(e) {
+		var parent = this.parentElement;
+		parent.parentElement.removeChild(parent);
+		maestroFolders.deleteFolder(this.getAttribute("data-folder-name"));
+		console.log(this.getAttribute("data-folder-name"));
+	});
+	entry.appendChild(deleteButton);
+	list.appendChild(entry);
+}
+
+
+
+function updateFolderList() {	
+	maestroFolders.getFolderNames(function(folderNames) {
+		for(var i=0; i<folderNames.length; i++) {
+			var folderName = folderNames[i];
+			addFolder(folderName,folderList);
+		}
+	});
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+  var folderList = $('folderList');
   $('folder').addEventListener('click', function(e) {
     chrome.fileSystem.chooseEntry({type:"openDirectory"}, function(folder) {
 		console.log(folder);
 		window.folderToAdd = folder;
 		$('folderName').innertText=folder.name;
+		if($('name').value == "") {
+			$('name').value = folder.name;
+		}
 	});
   });
   
   $('addFolder').addEventListener('click', function(e) {
+  	if(window.folderToAdd && $('name').value) {
 		maestroFolders.addFolder($('name').value,window.folderToAdd);
+		addFolder($('name').value,folderList);
+		$('name').value = "";
+		window.folderToAdd =  null;
+	}
   });
+  
+  updateFolderList();
 });
