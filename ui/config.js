@@ -1,2 +1,0 @@
-version = Math.random();
-

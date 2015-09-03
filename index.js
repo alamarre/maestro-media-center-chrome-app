@@ -9,13 +9,25 @@ function log(text) {
 var port = 8717;
 var wsPort = port+1;
 var isServer = false;
+var uiLocation = "ui/angular/public_html";
+
+function updatePort(value) {
+	window.port = value.port || window.port;
+	$('port').value = window.port;
+    server.listen(window.port);
+	window.wsPort = window.port+1;
+	wsListener.listen(window.wsPort);
+}
+
 if (http.Server && http.WebSocketServer) {
   // Listen for HTTP connections.
   var server = new http.Server();
   var wsListener = new http.Server();
   var wsServer = new http.WebSocketServer(wsListener);
-  server.listen(port);
-  wsListener.listen(wsPort);
+  chrome.storage.local.get('port', function(port) {
+    updatePort(port);
+  });
+  
   isServer = true;
   var maestroApi = new MaestroApi();
 
@@ -32,7 +44,7 @@ if (http.Server && http.WebSocketServer) {
 	if(url.indexOf(".html")>0&&url.indexOf("/templates")!=0) {
 		url = "/index.html";
 	}
-    req.serveUrl("/ui"+url);
+    req.serveUrl("/"+uiLocation+url);
     return true;
   });
 
@@ -134,6 +146,13 @@ document.addEventListener('DOMContentLoaded', function() {
 		$('name').value = "";
 		window.folderToAdd =  null;
 	}
+  });
+  
+  $('updatePort').addEventListener('click', function(e) {
+    var keys = {port:Number($('port').value)};
+    chrome.storage.local.set(keys, function() {
+  	  updatePort(keys);
+	});
   });
   
   updateFolderList();
