@@ -13,6 +13,7 @@ var uiLocation = "ui/angular/public_html";
 
 function updatePort(value) {
 	window.port = value.port || window.port;
+	$('browserLink').href = "http://localhost:"+window.port;
 	$('port').value = window.port;
     server.listen(window.port);
 	window.wsPort = window.port+1;
