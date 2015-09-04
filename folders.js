@@ -1,5 +1,6 @@
 MaestroFolders = function() {
 }
+var playlists = new Playlists();
 
 MaestroFolders.prototype = {
 	addFolder: function(name, folderEntry) {
@@ -23,6 +24,7 @@ MaestroFolders.prototype = {
 			for(var folderName in folders) {
 				folderNames.push(folderName);
 			}
+			folderNames.push("Playlists");
 			callback(folderNames);
 		});
 	},
@@ -62,20 +64,51 @@ MaestroFolders.prototype = {
 			
 		});
 	},
-	getFileContents: function(path, start, end, callback) {	
-		var parts = path.split("/");
-		var folderName = parts.splice(0,1)[0];
-		var filePath = parts.join("/");
-		this.getFileEntry(folderName, filePath, function(entry) {
-			entry.file(function(file) {
-				var reader = new FileReader();
-				reader.onloadend = function () {
-					callback(reader.result, file.size);
-				}
-				if(end>=file.size) {
-					end = file.size;
-				}
-				reader.readAsArrayBuffer(file.slice(start,end));
+	getPathForAliasPromise: function(path) {
+		return new Promise(function(fulfill, reject) {
+			if(path.indexOf("Playlists")==0) {
+				var parts = path.split("/");
+				var playlist = parts[1];
+				var group = parts[2];
+				var file = parts[3];
+				playlists.getEpisodesPromise(playlist,group).then(function(episodes) {
+					console.log(episodes);
+					
+					var episode= episodes.filter(function(episode) {
+						var parts = path.split("/");
+						var file = parts[3];
+						return episode.name==file;
+					})[0];
+					fulfill(episode);
+				});
+			} else {
+				fulfill(path);
+			}
+		});
+	},
+	getFileContents: function(basePath, start, end, callback) {	
+		var folders = this;
+		this.getPathForAliasPromise(basePath).then(function(path) {
+			if(typeof path=="object") {
+				var folder = path.path;
+				var fileName = path.name;
+				path = folder+"/"+fileName;
+			}
+			var parts = path.split("/");
+			var folderName = parts.splice(0,1)[0];
+			var filePath = parts.join("/");
+			
+			folders.getFileEntry(folderName, filePath, function(entry) {
+				entry.file(function(file) {
+					var reader = new FileReader();
+					reader.onloadend = function () {
+						callback(reader.result, file.size);
+					}
+					if(end>=file.size) {
+						end = file.size;
+					}
+					reader.readAsArrayBuffer(file.slice(start,end));
+				});
 			});
 		});
 	},
@@ -86,20 +119,40 @@ MaestroFolders.prototype = {
 		var parts = path.split("/");
 		var folderName = parts.splice(0,1);
 		var subdirectory = parts.join("/");
-		this.getDirectoryReader(folderName,subdirectory,function(folderReader) {
-			
-			folderReader.readEntries(function(list) {
-				var result = {"files":[],"folders":[]};
-				for(var i=0; i<list.length; i++) {
-					var item = list[i];
-					if(item.isDirectory) {
-						result.folders.push(item.name);
-					} else {
-						result.files.push(item.name);
-					}
+		if(folderName=="Playlists") {
+			if(parts.length>0) {
+				var playlist = parts[0];
+				if(parts.length>1) {
+					var group = parts[1];
+					playlists.getEpisodesPromise(playlist,group).then(function(episodes) {
+						callback({"files":episodes.map(function(episode) { return episode.name;}),"folders":[]});
+					});
+				} else {
+					playlists.getGroupsPromise(playlist).then(function(groups) {
+						callback({"files":[],"folders":groups});
+					});
 				}
-				callback(result);
+			} else {
+				playlists.getPlaylistsPromise().then(function(playlists) {
+					callback({"files":[],"folders":playlists});
+				});
+			}
+		} else {
+			this.getDirectoryReader(folderName,subdirectory,function(folderReader) {
+				
+				folderReader.readEntries(function(list) {
+					var result = {"files":[],"folders":[]};
+					for(var i=0; i<list.length; i++) {
+						var item = list[i];
+						if(item.isDirectory) {
+							result.folders.push(item.name);
+						} else {
+							result.files.push(item.name);
+						}
+					}
+					callback(result);
+				});
 			});
-		});
+		}
 	}
 }

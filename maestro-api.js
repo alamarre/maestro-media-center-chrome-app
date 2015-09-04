@@ -86,13 +86,12 @@ function getEndFromRange(rangeHeader, start) {
 }
 
 MaestroApi.prototype = {
-	
 	handleRequest: function(req) {
 		var url = req.headers.url;
 		if (url == '/api/v1.0/server/ips') {
 			return this.getIpAddresses(req);
 		}
-		if(url.indexOf("/videos")==0) {
+		if(url.indexOf("/videos")==0&&url.indexOf(".html")<0) {
 			return this.serveVideo(req);
 		}
 		if(urlOnly(url) == '/api/v1.0/health') {
@@ -129,7 +128,6 @@ MaestroApi.prototype = {
 		var end = getEndFromRange(range, start);
 		var keepStreaming = start==0;
 		stream(path,start,end,req,keepStreaming)
-		
 	},
 	listVideosAndFolders: function(req) {
 		var url = req.headers.url;

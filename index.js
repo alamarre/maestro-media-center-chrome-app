@@ -129,6 +129,7 @@ function updateFolderList() {
 }
 
 var maestroServer = new MaestroServer();
+var playlists = new Playlists();
 
 document.addEventListener('DOMContentLoaded', function () {
 
