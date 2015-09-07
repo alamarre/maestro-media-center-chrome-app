@@ -123,7 +123,9 @@ function updateFolderList() {
 	maestroFolders.getFolderNames(function (folderNames) {
 		for (var i = 0; i < folderNames.length; i++) {
 			var folderName = folderNames[i];
-			addFolder(folderName, folderList);
+			if(folderName!="Playlists") {
+				addFolder(folderName, folderList);
+			}
 		}
 	});
 }
